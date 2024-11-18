@@ -7,13 +7,15 @@ class TestCallLLMFunction(unittest.TestCase):
         # Call the function
         category = "Ancient Rome"
         keywords = ["Caesar", "Legion", "Coliseum", "Rome baths"]
-        result = generate_description(category, keywords)
+        result = generate_description(category, keywords).lower()
 
         # Validate the result
-        self.assertIn(
-            result,
-            keywords
-        )
+        for keyword in keywords:
+            print("Checking: " + keyword + "..")
+            self.assertIn(
+                keyword.lower(),
+                result
+            )
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(exit=False)

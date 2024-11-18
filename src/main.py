@@ -9,7 +9,7 @@ from langchain.schema import BaseOutputParser
 
 # ensure that env
 
-def generate_description(category: str, keyWords: list[str]) -> list:
+def generate_description(category: str, keyWords: list[str]) -> str:
     try:
         chat_model = ChatOpenAI()
 

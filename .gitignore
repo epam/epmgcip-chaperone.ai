@@ -4,3 +4,13 @@ node_modules
 npm-debug.log
 *.env
 *.venv
+
+# eggs
+develop-eggs/
+eggs/
+.eggs/
+*.egg-info/
+*.egg
+
+# cache
+__pycache__/
