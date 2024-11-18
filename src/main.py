@@ -28,7 +28,7 @@ def generate_description(category: str, keyWords: list[str]) -> str:
         chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
 
         # Define the output parser
-        class CommaSeparatedListOutputParser(BaseOutputParser):
+        class CustomOutputParser(BaseOutputParser):
             def parse(self, text: str):
                 return text # format/validate output?
 
@@ -36,7 +36,7 @@ def generate_description(category: str, keyWords: list[str]) -> str:
         chain = LLMChain(
             llm=chat_model,
             prompt=chat_prompt,
-            output_parser=CommaSeparatedListOutputParser()
+            output_parser=CustomOutputParser()
         )
 
         # Run the chain and return the result

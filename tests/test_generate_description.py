@@ -12,6 +12,7 @@ class TestCallLLMFunction(unittest.TestCase):
         # Validate the result
         for keyword in keywords:
             print("Checking: " + keyword + "..")
+            # not 100% reliable yet, since the expected words might be slighly changed
             self.assertIn(
                 keyword.lower(),
                 result
