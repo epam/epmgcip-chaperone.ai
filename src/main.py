@@ -19,7 +19,7 @@ class CustomOutputParser(BaseOutputParser):
 
 def llm_call(model, system_template, human_template, param_provider: Callable[[], dict], custom_output_parser) -> str:
     try:
-        api_key = os.environ['OPENAI_API_KEY'];
+        api_key = os.environ['OPENAI_API_KEY']
         # ranges from 0 to 2, with lower values indicating greater determinism and higher values indicating more randomness.
         temperature=0.7
         # default value is bigger and dependent on model
@@ -72,7 +72,7 @@ def translate_text(text: str, language: str) -> str:
         param_provider=param_provider,
         custom_output_parser= CustomOutputParser())
 
-# Example usage
+# Example of usage
 if __name__ == "__main__":
 
     language = "Belarussian"
