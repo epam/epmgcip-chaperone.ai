@@ -7,4 +7,4 @@ azure-functions
 # LLM
 openai==1.55.3
 python-dotenv==1.0.1
-langchain==0.0.338
+langchain==0.3.11
