@@ -9,10 +9,10 @@ on:
     branches:
       - main
       - master
-  workflow_dispatch:
+  workflow_dispatch: # Allow manual workflow dispatch
     inputs:
       environment:
-        description: "Specify the environment (e.g., DEV, STAGING, PROD)"
+        description: "Specify the environment (DEV, STAGING, PROD)" # Input for manual trigger
         required: true
         default: DEV
 
@@ -23,48 +23,68 @@ jobs:
 
     defaults:
       run:
-        working-directory: infrastructure/terraform
+        working-directory: infrastructure/terraform # Set the default working directory
 
     steps:
+      # Step 1: Checkout the code repository
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # Step 2: Set Environment and Workspace
       - name: Set Environment and Workspace
         run: |
+          # Retrieve the base name for the Terraform workspace
           BASE_NAME=${{ secrets.TF_CLOUD_WORKSPACE_BASE_NAME }}
+          
+          # Determine the environment based on the event type
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+            # Use the environment input for manual workflow dispatch
+            ENVIRONMENT=${{ github.event.inputs.environment }}
           elif [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
-            echo "ENVIRONMENT=STAGING" >> $GITHUB_ENV
+            # Set environment to STAGING for push to main/master
+            ENVIRONMENT="STAGING"
           elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "ENVIRONMENT=DEV" >> $GITHUB_ENV
+            # Set environment to DEV for pull request
+            ENVIRONMENT="DEV"
           else
             echo "Unknown environment. Exiting."
             exit 1
           fi
-          echo "TF_WORKSPACE=${BASE_NAME}-${ENVIRONMENT,,}" >> $GITHUB_ENV
+          
+          # Save the environment and workspace to GitHub environment variables
+          echo "ENVIRONMENT=$ENVIRONMENT" >> $GITHUB_ENV
+          TF_WORKSPACE="${BASE_NAME}-${ENVIRONMENT,,}" # Generate workspace name in lowercase
+          echo "TF_WORKSPACE=$TF_WORKSPACE" >> $GITHUB_ENV
 
+      # Step 3: Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.0
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
+      # Step 4: Initialize Terraform
       - name: Terraform Init
         env:
           TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
           TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
         run: terraform init
 
+      # Step 5: Check Terraform format
+      - name: Terraform Format
+        run: terraform fmt -check
+
+      # Step 6: Plan Terraform changes
       - name: Terraform Plan
         env:
           TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
           TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
         run: terraform plan
 
+      # Step 7: Apply Terraform changes
       - name: Terraform Apply
         if: ${{ github.event_name == 'workflow_dispatch' || env.ENVIRONMENT != 'DEV' }}
         env:
           TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
           TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -input=false
