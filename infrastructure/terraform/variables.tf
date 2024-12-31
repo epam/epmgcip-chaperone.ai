@@ -19,7 +19,7 @@ variable "resource_group_name" {
 
 variable "location" {
   description = "The Azure region for resources"
-  default     = "Sweden Central"
+  default     = "Central US"
   type        = string
   sensitive   = false
 }
