@@ -5,7 +5,7 @@ resource "azurerm_service_plan" "plan" {
   resource_group_name = var.resource_group_name
 
   os_type = "Linux"
-  sku_name = "F1"
+  sku_name = "Y1" # Y1 is the SKU for the Consumption Plan
 
   tags = {
     environment = var.environment
