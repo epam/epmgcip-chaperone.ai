@@ -1,0 +1,58 @@
+name: Destroy Azure Resources with Terraform
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Specify the environment to clean up (DEV, STAGING, PROD)"
+        required: true
+        default: DEV
+
+jobs:
+  terraform-destroy:
+    name: Destroy terraform resources
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: infrastructure/terraform
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set Environment and Workspace
+        run: |
+          BASE_NAME=${{ secrets.TF_CLOUD_WORKSPACE_BASE_NAME }}
+          
+          # Set environment from input
+          ENVIRONMENT=${{ github.event.inputs.environment }}
+          
+          # Save environment and workspace to GitHub environment variables
+          echo "ENVIRONMENT=$ENVIRONMENT" >> $GITHUB_ENV
+          TF_WORKSPACE="${BASE_NAME}-${ENVIRONMENT,,}"
+          echo "TF_WORKSPACE=$TF_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Init
+        env:
+          TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
+          TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
+        run: terraform init
+
+      - name: Terraform Destroy Plan
+        env:
+          TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
+          TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
+        run: terraform plan -destroy -out=tfplan-destroy
+
+      - name: Confirm and Destroy Resources
+        env:
+          TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
+          TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
+        run: terraform apply -auto-approve tfplan-destroy
