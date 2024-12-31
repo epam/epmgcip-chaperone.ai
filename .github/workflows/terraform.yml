@@ -1,0 +1,68 @@
+name: Deploy to Azure with Terraform
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  terraform:
+    name: Apply terraform resources
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: infrastructure/terraform
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set Environment and Workspace
+        run: |
+          BASE_NAME=${{ secrets.TF_CLOUD_WORKSPACE_BASE_NAME }}
+          if [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" =~ ^refs/tags/v.* ]]; then
+            echo "ENVIRONMENT=PROD" >> $GITHUB_ENV
+            echo "TF_WORKSPACE=${BASE_NAME}-prod" >> $GITHUB_ENV
+          elif [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
+            echo "ENVIRONMENT=STAGING" >> $GITHUB_ENV
+            echo "TF_WORKSPACE=${BASE_NAME}-staging" >> $GITHUB_ENV
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "ENVIRONMENT=DEV" >> $GITHUB_ENV
+            echo "TF_WORKSPACE=${BASE_NAME}-dev" >> $GITHUB_ENV
+          else
+            echo "Unknown environment. Exiting."
+            exit 1
+          fi
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Init
+        env:
+          TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
+          TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
+        run: terraform init
+
+      - name: Terraform Plan
+        env:
+          TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
+          TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
+        run: terraform plan
+
+      - name: Terraform Apply
+        if: ${{ env.ENVIRONMENT != 'DEV' }}
+        env:
+          TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
+          TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
+        run: terraform apply -auto-approve
