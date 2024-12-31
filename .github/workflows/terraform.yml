@@ -2,8 +2,6 @@ name: Deploy to Azure with Terraform
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
     branches:
       - main
       - master
@@ -11,6 +9,12 @@ on:
     branches:
       - main
       - master
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Specify the environment (e.g., DEV, STAGING, PROD)"
+        required: true
+        default: DEV
 
 jobs:
   terraform:
@@ -28,19 +32,17 @@ jobs:
       - name: Set Environment and Workspace
         run: |
           BASE_NAME=${{ secrets.TF_CLOUD_WORKSPACE_BASE_NAME }}
-          if [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" =~ ^refs/tags/v.* ]]; then
-            echo "ENVIRONMENT=PROD" >> $GITHUB_ENV
-            echo "TF_WORKSPACE=${BASE_NAME}-prod" >> $GITHUB_ENV
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
           elif [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
             echo "ENVIRONMENT=STAGING" >> $GITHUB_ENV
-            echo "TF_WORKSPACE=${BASE_NAME}-staging" >> $GITHUB_ENV
           elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
             echo "ENVIRONMENT=DEV" >> $GITHUB_ENV
-            echo "TF_WORKSPACE=${BASE_NAME}-dev" >> $GITHUB_ENV
           else
             echo "Unknown environment. Exiting."
             exit 1
           fi
+          echo "TF_WORKSPACE=${BASE_NAME}-${ENVIRONMENT,,}" >> $GITHUB_ENV
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -61,7 +63,7 @@ jobs:
         run: terraform plan
 
       - name: Terraform Apply
-        if: ${{ env.ENVIRONMENT != 'DEV' }}
+        if: ${{ github.event_name == 'workflow_dispatch' || env.ENVIRONMENT != 'DEV' }}
         env:
           TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
           TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
