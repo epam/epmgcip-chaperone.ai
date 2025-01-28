@@ -1,154 +1,167 @@
-# Azure Setup Instructions
+# **Azure Function App Deployment with Terraform**
 
-This document provides step-by-step instructions to set up Azure for the project and obtain the necessary data for GitHub Actions secrets.
-
----
-
-## **Step 1: Log in to Azure**
-
-1. Install the [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli).
-2. Log in to an Azure account:
-   ```bash
-   az login
-   ```
-   - A browser window will open for authentication.
-   - After successful login, a JSON output of account details will be displayed.
+This repository contains the infrastructure-as-code (IaC) configuration for deploying an Azure Function App using Terraform. The setup leverages **Terraform Cloud** for state management and **GitHub Actions** for CI/CD automation.
 
 ---
 
-## **Step 2: Check the Subscription**
-
-1. List all available subscriptions:
-   ```bash
-   az account list --output table
-   ```
-2. Set the subscription to use:
-   ```bash
-   az account set --subscription <subscription-id>
-   ```
-3. Verify the active subscription:
-   ```bash
-   az account show
-   ```
-   Output:
-   ```json
-   {
-     "id": "<subscription-id>",
-     "name": "<subscription-name>",
-     "tenantId": "<tenant-id>",
-     "user": {
-       "name": "user@example.com",
-       "type": "user"
-     }
-   }
-   ```
-
-   - **`id`**: This is the `subscriptionId`.
-   - **`tenantId`**: This is the `tenantId`.
+## **Features**
+- Automated deployment of Azure infrastructure:
+  - Azure Resource Group
+  - Azure Storage Account
+  - Azure App Service Plan
+  - Azure Function App
+- Environment-specific configurations (`DEV`, `STAGING`, `PROD`)
+- Secure secrets management via GitHub Secrets and Terraform Cloud variables
+- Manual and automatic workflow triggers for different environments
 
 ---
 
-## **Step 3: Manually Create a Service Principal**
+## **Prerequisites**
+### 1. **Azure Subscription**
+You must have an active Azure subscription.
 
-Service Principals are essential for authenticating GitHub Actions with Azure. For security and control, it is recommended to create Service Principals manually, especially for Production environments.
+### 2. **Create an Azure Service Principal**
+A Service Principal is needed for Terraform to interact with your Azure subscription. Follow these steps:
 
-### **Why Configure Manually?**
-1. **Security**: Manual creation ensures that secrets (e.g., client secrets) are not exposed in logs or Terraform state files.
-2. **Control**: Allows verification of roles and permissions before integration with automation.
-3. **Best Practices**: Minimizes the risk of misconfiguration during automated deployments for Production environments.
-4. **Terraform Limitation**: Terraform stores sensitive data like client secrets in its state file, which can pose a security risk.
-
-### **How to Create a Service Principal Manually**
-
-1. Create a Service Principal for the project environment (e.g., `DEV`, `STAGING`, `PROD`):
-   ```bash
-   az ad sp create-for-rbac --name "<MyServicePrincipal>-DEV" --role="Contributor" --scopes="/subscriptions/<subscription-id>" --sdk-auth
-   ```
-   Example output:
-   ```json
-   {
-     "clientId": "<client-id>",
-     "clientSecret": "<client-secret>",
-     "subscriptionId": "<subscription-id>",
-     "tenantId": "<tenant-id>",
-     "activeDirectoryEndpointUrl": "https://login.microsoftonline.com",
-     "resourceManagerEndpointUrl": "https://management.azure.com/",
-     "activeDirectoryGraphResourceId": "https://graph.windows.net/",
-     "sqlManagementEndpointUrl": "https://management.core.windows.net:8443/",
-     "galleryEndpointUrl": "https://gallery.azure.com/",
-     "managementEndpointUrl": "https://management.core.windows.net/"
-   }
-   ```
-2. Save the output securely. The following fields will be needed for GitHub Actions secrets:
-   - `clientId` → `AZURE_CLIENT_ID`
-   - `clientSecret` → `AZURE_CLIENT_SECRET`
-   - `subscriptionId` → `AZURE_SUBSCRIPTION_ID`
-   - `tenantId` → `AZURE_TENANT_ID`
-
-3. Repeat this process for each environment (`DEV`, `STAGING`, `PROD`) with unique names like `MyServicePrincipal-STAGING` and `MyServicePrincipal-PROD`.
-
----
-
-## **Step 4: Add Secrets to GitHub Actions**
-
-1. Go to the GitHub repository.
-2. Navigate to **Settings** → **Secrets and variables** → **Actions**.
-3. Add the following secrets for each environment (e.g., `DEV`, `STAGING`, `PROD`):
-   - **`AZURE_CLIENT_ID`**: From the `clientId` field.
-   - **`AZURE_CLIENT_SECRET`**: From the `clientSecret` field.
-   - **`AZURE_SUBSCRIPTION_ID`**: From the `subscriptionId` field.
-   - **`AZURE_TENANT_ID`**: From the `tenantId` field.
-
-For example:
-- `DEV_AZURE_CLIENT_ID`
-- `DEV_AZURE_CLIENT_SECRET`
-- `DEV_AZURE_SUBSCRIPTION_ID`
-- `DEV_AZURE_TENANT_ID`
-
-Repeat the process for `STAGING` and `PROD`.
-
-![alt text](/assets/github-actions-secrets.png)
-
----
-
-## **Step 5: (Optional) Reset the Client Secret**
-
-If the `clientSecret` is lost, reset it with the following command:
+#### **Step 1: Login to Azure CLI**
+Run the following command to log in to Azure:
 ```bash
-az ad sp credential reset --name "MyServicePrincipal-DEV"
+az login
 ```
-Example output:
+
+#### **Step 2: Create a Service Principal**
+Execute the following command to create a Service Principal:
+```bash
+az ad sp create-for-rbac --role Contributor --scopes /subscriptions/<YOUR_SUBSCRIPTION_ID>
+```
+
+Replace `<YOUR_SUBSCRIPTION_ID>` with your Azure Subscription ID.
+
+#### **Step 3: Save the Output**
+The command will output the following JSON:
 ```json
 {
-  "appId": "<client-id>",
-  "password": "<new-client-secret>",
-  "tenant": "<tenant-id>"
+  "appId": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+  "displayName": "azure-cli-2023-XX-XX-XX",
+  "password": "XXXXXXXXXXXXXXXXXXXXXXXX",
+  "tenant": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 }
 ```
-- Use the new `password` as `AZURE_CLIENT_SECRET`.
+Take note of the following values:
+- **`appId`** → This is your `ARM_CLIENT_ID`.
+- **`password`** → This is your `ARM_CLIENT_SECRET`.
+- **`tenant`** → This is your `ARM_TENANT_ID`.
+- Your **Subscription ID** is your `ARM_SUBSCRIPTION_ID`.
 
 ---
 
-## **Step 6: Obtain OpenAI API Keys (if applicable)**
-
-1. Log in to the [OpenAI Dashboard](https://platform.openai.com/).
-2. Navigate to **API Keys**.
-3. Create API keys for each environment (`DEV`, `STAGING`, `PROD`).
-4. Add the keys to GitHub Actions secrets:
-   - `DEV_OPENAI_API_KEY`
-   - `STAGING_OPENAI_API_KEY`
-   - `PROD_OPENAI_API_KEY`
+### 3. **Terraform Cloud Account**
+1. Sign up for [Terraform Cloud](https://app.terraform.io).
+2. Create an **organization** in Terraform Cloud.
+3. Generate a **Terraform Cloud API Token**:
+   - Go to **User Settings** > **Tokens** > **Create an API token**.
+   - Save the token securely.
 
 ---
 
-## **Verification**
+## **Setup**
 
-1. Ensure all secrets are added to GitHub:
-   - Go to **Settings** → **Secrets and variables** → **Actions**.
-   - Verify the presence of all required secrets.
-2. Run the GitHub Actions workflow and confirm it uses the correct secrets.
+### **1. Terraform Cloud Workspace Configuration**
+Create workspaces in Terraform Cloud for each environment (`DEV`, `STAGING`, `PROD`).
+
+#### Workspace Variables:
+Add the following **Terraform Variables** in each workspace:
+
+| Key                   | Type      | Value                  | Category   |
+|-----------------------|-----------|------------------------|------------|
+| `environment`         | String    | `DEV`/`STAGING`/`PROD` | Terraform  |
+| `function_app_name`   | String    | Azure Function name    | Terraform  |
+| `OPENAI_API_KEY`      | Sensitive | Your OpenAI API key    | Terraform  |
+| `resource_group_name` | String    | Azure Resource Group   | Terraform  |
+| `service_plan_name`   | String    | App Service Plan Name  | Terraform  |
+| `storage_account_name`| String    | Storage Account Name   | Terraform  |
+
+Add the following **Environment Variables** in each workspace:
+
+| Key                   | Type      | Value                          | Category |
+|-----------------------|-----------|--------------------------------|----------|
+| `ARM_CLIENT_ID`       | Sensitive | Azure Service Principal ID     | Env      |
+| `ARM_CLIENT_SECRET`   | Sensitive | Azure Service Principal Secret | Env      |
+| `ARM_SUBSCRIPTION_ID` | Sensitive | Azure Subscription ID          | Env      |
+| `ARM_TENANT_ID`       | Sensitive | Azure Tenant ID                | Env      |
 
 ---
 
-The Azure setup is now complete, and the necessary data has been added to GitHub Actions secrets.
+### **2. GitHub Secrets Configuration**
+Navigate to your repository’s **Settings** > **Secrets and variables** > **Actions**, and add the following secrets:
 
+| Name                               | Value                           |
+|------------------------------------|---------------------------------|
+| `TF_API_TOKEN`                     | Terraform Cloud API Token       |
+| `TF_CLOUD_ORGANIZATION`            | Terraform Cloud Organization    |
+| `TF_CLOUD_WORKSPACE_BASE_NAME`     | Base name for workspaces (e.g., `myapp`) |
+
+---
+
+## **Deployment Workflows**
+
+### **GitHub Actions Workflow**
+The repository is configured with GitHub Actions to automate infrastructure deployment.
+
+### **1. Automatic Deployment**
+- **DEV Environment**: Triggered on pull requests to the `main` branch.
+- **STAGING Environment**: Triggered on push to the `main` or `master` branch.
+
+### **2. Manual Deployment**
+For `PROD` or custom environments:
+1. Go to the **Actions** tab in your repository.
+2. Select the `Deploy to Azure with Terraform` workflow.
+3. Click **Run workflow** and specify the desired environment (e.g., `PROD`).
+
+---
+
+## **Step-by-Step Instructions**
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/<your-repo>.git
+   cd <your-repo>
+   ```
+
+2. Push your code to the main branch to trigger the `STAGING` deployment:
+   ```bash
+   git add .
+   git commit -m "Deploy infrastructure"
+   git push origin main
+   ```
+
+3. To deploy manually (e.g., for `PROD`):
+   - Go to **Actions** in GitHub.
+   - Select `Deploy to Azure with Terraform`.
+   - Click **Run workflow** and specify the environment.
+
+---
+
+## **Infrastructure Cleanup**
+
+To destroy all resources, use the **Destroy Terraform Resources** workflow:
+1. Go to **Actions** in GitHub.
+2. Select `Destroy Terraform Resources`.
+3. Trigger the workflow manually and specify the environment (e.g., `DEV`, `STAGING`, `PROD`).
+
+---
+
+## **Code Deployment**
+1. Place your Azure Function code in the `function` directory in the repository.
+2. The function will be automatically deployed during the `Terraform Apply` step.
+
+---
+
+## **Troubleshooting**
+
+- **Workspace Not Found**: Ensure `TF_CLOUD_WORKSPACE_BASE_NAME` is correct and matches Terraform Cloud workspaces.
+- **Authentication Errors**: Verify `ARM_*` environment variables are set correctly in Terraform Cloud.
+- **Quota Errors**: Ensure your Azure subscription has sufficient quotas.
+- **Function App Runtime Errors**: Confirm the correct runtime version in the function configuration.
+
+---

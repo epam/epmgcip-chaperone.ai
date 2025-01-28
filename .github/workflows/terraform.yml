@@ -1,4 +1,4 @@
-name: Deploy to Azure with Terraform
+name: Deploy to Azure with Terraform and Function App Code
 
 on:
   push:
@@ -18,7 +18,7 @@ on:
 
 jobs:
   terraform:
-    name: Apply terraform resources
+    name: Apply Terraform Resources
     runs-on: ubuntu-latest
 
     defaults:
@@ -35,22 +35,20 @@ jobs:
         run: |
           # Retrieve the base name for the Terraform workspace
           BASE_NAME=${{ secrets.TF_CLOUD_WORKSPACE_BASE_NAME }}
-          
+
           # Determine the environment based on the event type
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             # Use the environment input for manual workflow dispatch
             ENVIRONMENT=${{ github.event.inputs.environment }}
           elif [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
-            # Set environment to STAGING for push to main/master
             ENVIRONMENT="STAGING"
           elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            # Set environment to DEV for pull request
             ENVIRONMENT="DEV"
           else
             echo "Unknown environment. Exiting."
             exit 1
           fi
-          
+
           # Save the environment and workspace to GitHub environment variables
           echo "ENVIRONMENT=$ENVIRONMENT" >> $GITHUB_ENV
           TF_WORKSPACE="${BASE_NAME}-${ENVIRONMENT,,}" # Generate workspace name in lowercase
@@ -60,7 +58,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.9.8
+          terraform_version: latest
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       # Step 4: Initialize Terraform
@@ -88,3 +86,51 @@ jobs:
           TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
           TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
         run: terraform apply -auto-approve -input=false
+
+      - name: Debug Terraform Outputs
+        env:
+          TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
+          TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
+        run: |
+          terraform output -json
+
+      # Step 8: Extract Terraform Outputs
+      - name: Extract Terraform Outputs
+        id: outputs
+        run: |
+          RG_NAME=$(terraform output -raw resource_group_name)
+          FN_NAME=$(terraform output -raw function_app_name)
+          echo "RESOURCE_GROUP_NAME=$RG_NAME" >> $GITHUB_ENV
+          echo "FUNCTION_APP_NAME=$FN_NAME" >> $GITHUB_ENV
+
+      # Step 9: Get Publish Profile
+      - name: Get Publish Profile
+        run: |
+          az functionapp deployment list-publishing-profiles \
+            --name ${{ env.FUNCTION_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP_NAME }} \
+            --xml > publish_profile.xml
+          echo "AZURE_FUNCTIONAPP_PUBLISH_PROFILE=$(cat publish_profile.xml)" >> $GITHUB_ENV
+
+  deploy-code:
+    name: Deploy Function App Code
+    runs-on: ubuntu-latest
+    needs: terraform # Ensure this job runs after the Terraform job
+
+    steps:
+      # Step 1: Checkout the code repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Zip Function App Code
+      - name: Zip Function App Code
+        run: |
+          cd ${{ github.workspace }}/functions
+          zip -r ../function.zip . -x "*.git*"
+
+      # Step 3: Deploy Function App Code
+      - name: Deploy to Azure Function App
+        uses: azure/functions-action@v1
+        with:
+          publish-profile: ${{ env.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+          package: ${{ github.workspace }}/function.zip

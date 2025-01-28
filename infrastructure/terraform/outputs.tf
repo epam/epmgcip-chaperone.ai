@@ -1,3 +1,9 @@
+output "function_app_name" {
+  description = "Name of the Azure Function App"
+  sensitive   = true
+  value       = module.function_app.name
+}
+
 output "function_app_url" {
   description = "URL of the Azure Function App"
   value       = module.function_app.url

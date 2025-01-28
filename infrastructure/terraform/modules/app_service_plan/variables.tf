@@ -2,7 +2,7 @@ variable "service_plan_name" {
   description = "The name of the Service Plan"
   type        = string
   sensitive   = false
-  nullable = false
+  nullable    = false
 
   validation {
     condition     = length(var.service_plan_name) >= 1 && length(var.service_plan_name) <= 40
@@ -14,7 +14,7 @@ variable "resource_group_name" {
   description = "The name of the Resource Group"
   type        = string
   sensitive   = false
-  nullable = false
+  nullable    = false
 
   validation {
     condition     = length(var.resource_group_name) >= 1 && length(var.resource_group_name) <= 90
@@ -26,12 +26,12 @@ variable "location" {
   description = "The location of the Resource Group"
   type        = string
   sensitive   = false
-  nullable = false
+  nullable    = false
 }
 
 variable "environment" {
   description = "The environment in which the resources are deployed"
   type        = string
   sensitive   = false
-  nullable = false
+  nullable    = false
 }

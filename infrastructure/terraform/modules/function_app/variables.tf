@@ -2,7 +2,7 @@ variable "function_app_name" {
   description = "Name of the Azure Function App"
   type        = string
   sensitive   = false
-  nullable = false
+  nullable    = false
 
   validation {
     condition     = length(var.function_app_name) >= 1 && length(var.function_app_name) <= 60 && var.function_app_name == lower(var.function_app_name)
@@ -14,7 +14,7 @@ variable "resource_group_name" {
   description = "The name of the Resource Group"
   type        = string
   sensitive   = false
-  nullable = false
+  nullable    = false
 
   validation {
     condition     = length(var.resource_group_name) >= 1 && length(var.resource_group_name) <= 90
@@ -26,35 +26,35 @@ variable "location" {
   description = "The Azure region for resources"
   type        = string
   sensitive   = false
-  nullable = false
+  nullable    = false
 }
 
 variable "service_plan_id" {
   description = "ID of the App Service Plan"
   type        = string
   sensitive   = false
-  nullable = false
+  nullable    = false
 }
 
 variable "storage_account_name" {
   description = "The name of the Storage Account"
   type        = string
   sensitive   = false
-  nullable = false
+  nullable    = false
 }
 
 variable "storage_account_access_key" {
   description = "Access key for the Storage Account"
   type        = string
   sensitive   = true
-  nullable = false
+  nullable    = false
 }
 
 variable "environment" {
   description = "The environment in which the resources are deployed"
   type        = string
   sensitive   = false
-  nullable = false
+  nullable    = false
 }
 
 variable "OPENAI_API_KEY" {
