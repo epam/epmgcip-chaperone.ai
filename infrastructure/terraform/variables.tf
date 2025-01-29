@@ -62,3 +62,13 @@ variable "OPENAI_API_KEY" {
   sensitive   = true
   nullable    = false
 }
+
+variable "github_organization" {
+  description = "GitHub organization name"
+  type        = string
+}
+
+variable "github_repository" {
+  description = "GitHub repository name"
+  type        = string
+}

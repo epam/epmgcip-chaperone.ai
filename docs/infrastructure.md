@@ -32,7 +32,7 @@ az login
 #### **Step 2: Create a Service Principal**
 Execute the following command to create a Service Principal:
 ```bash
-az ad sp create-for-rbac --role Contributor --scopes /subscriptions/<YOUR_SUBSCRIPTION_ID>
+az ad sp create-for-rbac --role "User Access Administrator" --scopes /subscriptions/<YOUR_SUBSCRIPTION_ID>
 ```
 
 Replace `<YOUR_SUBSCRIPTION_ID>` with your Azure Subscription ID.
@@ -69,7 +69,22 @@ Take note of the following values:
 ### **1. Terraform Cloud Workspace Configuration**
 Create workspaces in Terraform Cloud for each environment (`DEV`, `STAGING`, `PROD`).
 
+Add the following **Environment Variables** in project variable set (e.g. "Azure"):
+
+| Key                   | Type      | Value                          | Category |
+|-----------------------|-----------|--------------------------------|----------|
+| `ARM_SUBSCRIPTION_ID` | Sensitive | Azure Subscription ID          | Env      |
+| `ARM_TENANT_ID`       | Sensitive | Azure Tenant ID                | Env      |
+
 #### Workspace Variables:
+Add the following **Environment Variables** in each workspace:
+
+| Key                   | Type      | Value                          | Category |
+|-----------------------|-----------|--------------------------------|----------|
+| `ARM_CLIENT_ID`       | Sensitive | Azure Service Principal ID     | Env      |
+| `ARM_CLIENT_SECRET`   | Sensitive | Azure Service Principal Secret | Env      |
+
+
 Add the following **Terraform Variables** in each workspace:
 
 | Key                   | Type      | Value                  | Category   |
@@ -81,15 +96,6 @@ Add the following **Terraform Variables** in each workspace:
 | `service_plan_name`   | String    | App Service Plan Name  | Terraform  |
 | `storage_account_name`| String    | Storage Account Name   | Terraform  |
 
-Add the following **Environment Variables** in each workspace:
-
-| Key                   | Type      | Value                          | Category |
-|-----------------------|-----------|--------------------------------|----------|
-| `ARM_CLIENT_ID`       | Sensitive | Azure Service Principal ID     | Env      |
-| `ARM_CLIENT_SECRET`   | Sensitive | Azure Service Principal Secret | Env      |
-| `ARM_SUBSCRIPTION_ID` | Sensitive | Azure Subscription ID          | Env      |
-| `ARM_TENANT_ID`       | Sensitive | Azure Tenant ID                | Env      |
-
 ---
 
 ### **2. GitHub Secrets Configuration**
@@ -97,6 +103,8 @@ Navigate to your repository’s **Settings** > **Secrets and variables** > **Act
 
 | Name                               | Value                           |
 |------------------------------------|---------------------------------|
+| `ARM_SUBSCRIPTION_ID`              | Azure Subscription ID           |
+| `ARM_TENANT_ID`                    | Azure Tenant ID                 |
 | `TF_API_TOKEN`                     | Terraform Cloud API Token       |
 | `TF_CLOUD_ORGANIZATION`            | Terraform Cloud Organization    |
 | `TF_CLOUD_WORKSPACE_BASE_NAME`     | Base name for workspaces (e.g., `myapp`) |
@@ -152,8 +160,8 @@ To destroy all resources, use the **Destroy Terraform Resources** workflow:
 ---
 
 ## **Code Deployment**
-1. Place your Azure Function code in the `function` directory in the repository.
-2. The function will be automatically deployed during the `Terraform Apply` step.
+1. Place your Azure Function code in the `functions` directory in the repository.
+2. The function will be automatically deployed during the `Deploy` step.
 
 ---
 
