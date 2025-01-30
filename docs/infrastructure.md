@@ -37,6 +37,8 @@ az ad sp create-for-rbac --role "User Access Administrator" --scopes /subscripti
 
 Replace `<YOUR_SUBSCRIPTION_ID>` with your Azure Subscription ID.
 
+Make sure that service principals has `User Access Administrator` and `Contributor` roles to make it possible to create resources and assign roles.
+
 #### **Step 3: Save the Output**
 The command will output the following JSON:
 ```json
