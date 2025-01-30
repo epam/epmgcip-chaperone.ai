@@ -42,7 +42,7 @@ module "function_app" {
   storage_account_name       = module.storage_account.name
   storage_account_access_key = module.storage_account.primary_access_key
   depends_on                 = [module.resource_group, module.storage_account, module.app_service_plan]
-  OPENAI_API_KEY = var.OPENAI_API_KEY
+  OPENAI_API_KEY             = var.OPENAI_API_KEY
 }
 
 # Module for creating a User Assigned Identity
