@@ -11,7 +11,7 @@ resource "azurerm_federated_identity_credential" "branches_credential" {
   name                = "github-actions-${each.key}"
   parent_id           = azurerm_user_assigned_identity.msi.id
   issuer              = var.issuer_url
-  subject             = "repo:${var.github_organization}/${var.github_repository}:ref:refs/heads/${each.key}"
+  subject             = "repo:${var.github_repository}/:ref:refs/heads/${each.key}"
   audience            = [var.audience_name]
 }
 
