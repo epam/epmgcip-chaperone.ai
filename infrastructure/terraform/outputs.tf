@@ -1,6 +1,5 @@
 output "function_app_name" {
   description = "Name of the Azure Function App"
-  sensitive   = false
   value       = module.function_app.name
 }
 
@@ -11,7 +10,6 @@ output "function_app_url" {
 
 output "resource_group_name" {
   description = "The name of the Resource Group"
-  sensitive   = false
   value       = module.resource_group.name
 }
 

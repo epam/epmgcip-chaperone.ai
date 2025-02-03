@@ -102,11 +102,6 @@ jobs:
           echo FUNCTION_APP_NAME=$(terraform output -raw function_app_name) >> $GITHUB_OUTPUT
           echo AZURE_GH_MANAGED_IDENTITY_CLIENT_ID=$(terraform output -raw gh_uai_client_id) >> $GITHUB_OUTPUT
 
-          echo "$RESOURCE_GROUP_NAME"
-          echo "$FUNCTION_APP_NAME"
-          echo "$AZURE_GH_MANAGED_IDENTITY_CLIENT_ID"
-
-
       - name: Debug
         run: |
           echo "Resource Group Name: ${{ steps.extract-terraform-outputs.outputs.RESOURCE_GROUP_NAME }}"
@@ -127,13 +122,6 @@ jobs:
       azure_functionapp_publish_profile: ${{ steps.get-publish-profile.outputs.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
 
     steps:
-      - name: Azure login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ needs.terraform.outputs.gh_managed_identity_client_id }}
-          tenant-id: ${{ secrets.ARM_TENANT_ID }}
-          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-
       - name: Debug
         run: |
           echo "Resource Group Name: ${{ needs.terraform.outputs.resource_group_name }}"
@@ -141,6 +129,12 @@ jobs:
           echo "Environment: ${{ needs.terraform.outputs.environment }}"
           echo "GitHub Managed Identity Client ID: ${{ needs.terraform.outputs.gh_managed_identity_client_id }}"
 
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ needs.terraform.outputs.gh_managed_identity_client_id }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
       
       - name: Get Publish Profile
         id: get-publish-profile
