@@ -33,6 +33,7 @@ jobs:
       function_app_name: ${{ steps.extract-terraform-outputs.outputs.FUNCTION_APP_NAME }}
       environment: ${{ steps.set-env-vars.outputs.ENVIRONMENT }}
       gh_managed_identity_client_id: ${{ steps.extract-terraform-outputs.outputs.AZURE_GH_MANAGED_IDENTITY_CLIENT_ID }}
+      TF_WORKSPACE: ${{ steps.set-env-vars.outputs.TF_WORKSPACE }}
 
     steps:
       - name: Checkout Code
@@ -58,6 +59,7 @@ jobs:
 
           TF_WORKSPACE="${BASE_NAME}-${ENVIRONMENT,,}"
           echo "TF_WORKSPACE=$TF_WORKSPACE" >> $GITHUB_ENV
+          echo "TF_WORKSPACE=$TF_WORKSPACE" >> $GITHUB_OUTPUT
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -117,6 +119,10 @@ jobs:
       contents: read
       id-token: write
       pull-requests: write
+
+    env:
+      TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
+      TF_WORKSPACE: ${{ needs.terraform.outputs.TF_WORKSPACE }}
 
     outputs:
       azure_functionapp_publish_profile: ${{ steps.get-publish-profile.outputs.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
