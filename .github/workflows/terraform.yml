@@ -124,6 +124,9 @@ jobs:
     steps:
       - name: Debug
         run: |
+          echo "All outputs from terraform step:"
+          echo "${{ toJson(needs.terraform.outputs) }}"
+
           echo "Resource Group Name: ${{ needs.terraform.outputs.resource_group_name }}"
           echo "Function App Name: ${{ needs.terraform.outputs.function_app_name }}"
           echo "Environment: ${{ needs.terraform.outputs.environment }}"
