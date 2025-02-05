@@ -9,7 +9,7 @@ on:
     branches:
       - main
       - master
-  workflow_dispatch: # Allow manual workflow dispatch
+  workflow_dispatch:
     inputs:
       environment:
         description: "Specify the environment (DEV, STAGING, PROD)"
@@ -33,7 +33,7 @@ jobs:
       function_app_name: ${{ steps.extract-terraform-outputs.outputs.FUNCTION_APP_NAME }}
       environment: ${{ steps.set-env-vars.outputs.ENVIRONMENT }}
       gh_managed_identity_client_id: ${{ steps.extract-terraform-outputs.outputs.AZURE_GH_MANAGED_IDENTITY_CLIENT_ID }}
-      workspace: ${{ env.TF_WORKSPACE }}
+      workspace: ${{ steps.set-env-vars.outputs.WORKSPACE }}
 
     steps:
       - name: Checkout Code
@@ -58,7 +58,8 @@ jobs:
           echo "ENVIRONMENT=$ENVIRONMENT" >> "$GITHUB_OUTPUT"
 
           TF_WORKSPACE="${BASE_NAME}-${ENVIRONMENT,,}"
-          echo "TF_WORKSPACE=$TF_WORKSPACE" >> $GITHUB_ENV
+          echo "TF_WORKSPACE=$TF_WORKSPACE" >> "$GITHUB_ENV"
+          echo "WORKSPACE=$TF_WORKSPACE" >> "$GITHUB_OUTPUT"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -102,7 +103,7 @@ jobs:
           echo RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name) >> "$GITHUB_OUTPUT"
           echo FUNCTION_APP_NAME=$(terraform output -raw function_app_name) >> "$GITHUB_OUTPUT"
           echo AZURE_GH_MANAGED_IDENTITY_CLIENT_ID=$(terraform output -raw gh_uai_client_id) >> "$GITHUB_OUTPUT"
-  
+
   azure-connect:
     name: Login to Azure and get Publish Profile
     runs-on: ubuntu-latest
@@ -111,6 +112,7 @@ jobs:
       contents: read
       id-token: write
       pull-requests: write
+      checks: read
 
     env:
       TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
@@ -120,12 +122,12 @@ jobs:
       azure_functionapp_publish_profile: ${{ steps.get-publish-profile.outputs.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
 
     steps:
-      - name: Debug
+      - name: Debug Outputs from Terraform
         run: |
-          echo "All outputs from terraform step:"
+          echo "All terraform outputs:"
           echo "${{ toJson(needs.terraform.outputs) }}"
-          echo "${{ toJson(env) }}"
-
+          
+          echo "TF_WORKSPACE: ${{ needs.terraform.outputs.workspace }}"
           echo "Resource Group Name: ${{ needs.terraform.outputs.resource_group_name }}"
           echo "Function App Name: ${{ needs.terraform.outputs.function_app_name }}"
           echo "Environment: ${{ needs.terraform.outputs.environment }}"
