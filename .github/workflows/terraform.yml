@@ -57,9 +57,9 @@ jobs:
 
           echo "ENVIRONMENT=$ENVIRONMENT" >> "$GITHUB_OUTPUT"
 
-          TF_WORKSPACE="${BASE_NAME}-${ENVIRONMENT,,}"
-          echo "TF_WORKSPACE=$TF_WORKSPACE" >> "$GITHUB_ENV"
-          echo "WORKSPACE=$TF_WORKSPACE" >> "$GITHUB_OUTPUT"
+          WORKSPACE="${BASE_NAME}-${ENVIRONMENT,,}"
+
+          echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -71,7 +71,7 @@ jobs:
       - name: Terraform Init
         env:
           TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
-          TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
+          TF_WORKSPACE: ${{ steps.set-env-vars.outputs.WORKSPACE }}
         run: terraform init
 
       - name: Terraform Format
@@ -85,20 +85,20 @@ jobs:
       - name: Terraform Plan
         env:
           TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
-          TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
+          TF_WORKSPACE: ${{ steps.set-env-vars.outputs.WORKSPACE }}
         run: terraform plan
 
       - name: Terraform Apply
         env:
           TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
-          TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
+          TF_WORKSPACE: ${{ steps.set-env-vars.outputs.WORKSPACE }}
         run: terraform apply -auto-approve -input=false
 
       - name: Extract Terraform Outputs
         id: extract-terraform-outputs
         env:
           TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
-          TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
+          TF_WORKSPACE: ${{ steps.set-env-vars.outputs.WORKSPACE }}
         run: |
           echo RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name) >> "$GITHUB_OUTPUT"
           echo FUNCTION_APP_NAME=$(terraform output -raw function_app_name) >> "$GITHUB_OUTPUT"
