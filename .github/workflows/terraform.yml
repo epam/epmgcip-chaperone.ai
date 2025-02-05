@@ -98,8 +98,8 @@ jobs:
           TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
           TF_WORKSPACE: ${{ env.TF_WORKSPACE }}
         run: |
-          echo RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name) >> $GITHUB_OUTPUT
-          echo FUNCTION_APP_NAME=$(terraform output -raw function_app_name) >> $GITHUB_OUTPUT
+          echo RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name) >> $GITHUB_ENV
+          echo FUNCTION_APP_NAME=$(terraform output -raw function_app_name) >> $GITHUB_ENV
           echo AZURE_GH_MANAGED_IDENTITY_CLIENT_ID=$(terraform output -raw gh_uai_client_id) >> $GITHUB_OUTPUT
 
       - name: Debug
@@ -126,6 +126,7 @@ jobs:
         run: |
           echo "All outputs from terraform step:"
           echo "${{ toJson(needs.terraform.outputs) }}"
+          echo "${{ toJson(env) }}"
 
           echo "Resource Group Name: ${{ needs.terraform.outputs.resource_group_name }}"
           echo "Function App Name: ${{ needs.terraform.outputs.function_app_name }}"
