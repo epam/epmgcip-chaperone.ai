@@ -33,7 +33,7 @@ jobs:
       function_app_name: ${{ steps.extract-terraform-outputs.outputs.FUNCTION_APP_NAME }}
       environment: ${{ steps.set-env-vars.outputs.ENVIRONMENT }}
       gh_managed_identity_client_id: ${{ steps.extract-terraform-outputs.outputs.AZURE_GH_MANAGED_IDENTITY_CLIENT_ID }}
-      WORKSPACE: ${{ steps.set-env-vars.outputs.WORKSPACE }}
+      workspace: ${{ env.TF_WORKSPACE }}
 
     steps:
       - name: Checkout Code
@@ -58,7 +58,6 @@ jobs:
           echo "ENVIRONMENT=$ENVIRONMENT" >> "$GITHUB_OUTPUT"
 
           TF_WORKSPACE="${BASE_NAME}-${ENVIRONMENT,,}"
-          echo "WORKSPACE=$TF_WORKSPACE" >> "$GITHUB_OUTPUT"
           echo "TF_WORKSPACE=$TF_WORKSPACE" >> $GITHUB_ENV
 
       - name: Setup Terraform
@@ -115,7 +114,7 @@ jobs:
 
     env:
       TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
-      TF_WORKSPACE: ${{ needs.terraform.outputs.WORKSPACE }}
+      TF_WORKSPACE: ${{ needs.terraform.outputs.workspace }}
 
     outputs:
       azure_functionapp_publish_profile: ${{ steps.get-publish-profile.outputs.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
