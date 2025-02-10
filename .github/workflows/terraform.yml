@@ -20,17 +20,20 @@ jobs:
   terraform:
     name: Apply Terraform Resources
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+      checks: read
     env:
+      AZURE_FUNCTIONAPP_PACKAGE_PATH: ${{ github.workspace }}/functions
+      PYTHON_VERSION: '3.11'
       TF_VAR_github_organization: ${{ github.repository_owner }}
       TF_VAR_github_repository: ${{ github.repository }}
 
     defaults:
       run:
         working-directory: infrastructure/terraform
-
-    outputs:
-      environment: ${{ steps.set-env-vars.outputs.ENVIRONMENT }}
-      workspace: ${{ steps.set-env-vars.outputs.WORKSPACE }}
 
     steps:
       - name: Checkout Code
@@ -91,58 +94,20 @@ jobs:
           TF_WORKSPACE: ${{ steps.set-env-vars.outputs.WORKSPACE }}
         run: terraform apply -auto-approve -input=false
 
-  azure-connect:
-    name: Login to Azure and get Publish Profile
-    runs-on: ubuntu-latest
-    needs: terraform
-    permissions:
-      contents: read
-      id-token: write
-      pull-requests: write
-      checks: read
-
-    env:
-      TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
-
-    outputs:
-      azure_functionapp_publish_profile: ${{ steps.get-publish-profile.outputs.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
-
-    steps:
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: latest
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
-          terraform_wrapper: false
-
-      - name: Terraform Outputs
-        id: terraform-outputs
-        run: |
-          BASE_NAME=${{ secrets.TF_CLOUD_WORKSPACE_BASE_NAME }}
-          ENVIRONMENT=${{ needs.terraform.outputs.environment }}
-          echo "TF_WORKSPACE: "${BASE_NAME}-${ENVIRONMENT,,}
-          echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
-
       - name: Extract Terraform Outputs
         id: extract-terraform-outputs
         env:
           TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
-          TF_WORKSPACE: ${{ steps.terraform-outputs.outputs.WORKSPACE }}
+          TF_WORKSPACE: ${{ steps.set-env-vars.outputs.WORKSPACE }}
         run: |
           echo RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name) >> "$GITHUB_OUTPUT"
           echo FUNCTION_APP_NAME=$(terraform output -raw function_app_name) >> "$GITHUB_OUTPUT"
           echo AZURE_GH_MANAGED_IDENTITY_CLIENT_ID=$(terraform output -raw gh_uai_client_id) >> "$GITHUB_OUTPUT"
 
-      - name: Debug Terraform Outputs
-        run: |
-          echo "RESOURCE_GROUP_NAME: ${{ steps.extract-terraform-outputs.outputs.RESOURCE_GROUP_NAME }}"
-          echo "FUNCTION_APP_NAME: ${{ steps.extract-terraform-outputs.outputs.FUNCTION_APP_NAME }}"
-          echo "AZURE_GH_MANAGED_IDENTITY_CLIENT_ID: ${{ steps.extract-terraform-outputs.outputs.AZURE_GH_MANAGED_IDENTITY_CLIENT_ID }}"
-
       - name: Azure login
         uses: azure/login@v2
         with:
-          client-id: ${{ needs.terraform.outputs.gh_managed_identity_client_id }}
+          client-id: ${{ steps.extract-terraform-outputs.outputs.AZURE_GH_MANAGED_IDENTITY_CLIENT_ID }}
           tenant-id: ${{ secrets.ARM_TENANT_ID }}
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
       
@@ -153,29 +118,16 @@ jobs:
           azcliversion: latest
           inlineScript: |
             az functionapp deployment list-publishing-profiles \
-            --name ${{ needs.terraform.outputs.function_app_name }} \
-            --resource-group ${{ needs.terraform.outputs.resource_group_name }} \
+            --name ${{ steps.extract-terraform-outputs.outputs.FUNCTION_APP_NAME }} \
+            --resource-group ${{ steps.extract-terraform-outputs.outputs.RESOURCE_GROUP_NAME }} \
             --xml > publish_profile.xml
             echo "AZURE_FUNCTIONAPP_PUBLISH_PROFILE=$(cat publish_profile.xml)" >> "$GITHUB_OUTPUT"
-
-  deploy-code:
-    name: Deploy Function App Code
-    runs-on: ubuntu-latest
-    needs: [terraform, azure-connect]
-
-    env:
-      PYTHON_VERSION: '3.11'
-      AZURE_FUNCTIONAPP_PACKAGE_PATH: ${{ github.workspace }}/functions
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
 
       - name: Setup Python ${{ env.PYTHON_VERSION }} Environment
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
+    
       - name: 'Resolve Project Dependencies Using Pip'
         shell: bash
         run: |
@@ -187,8 +139,9 @@ jobs:
       - name: Deploy to Azure Function App
         uses: azure/functions-action@v1
         with:
-          app-name: ${{ needs.terraform.outputs.function_app_name }}
-          publish-profile: ${{ needs.azure-connect.outputs.azure_functionapp_publish_profile }}
+          app-name: ${{ steps.extract-terraform-outputs.outputs.FUNCTION_APP_NAME }}
+          publish-profile: ${{ steps.get-publish-profile.outputs.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
           scm-do-build-during-deployment: true
           enable-oryx-build: true
+      
