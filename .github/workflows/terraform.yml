@@ -17,6 +17,52 @@ on:
         default: DEV
 
 jobs:
+  prepare-outputs:
+    name: Prepare Outputs
+    runs-on: ubuntu-latest
+    outputs:
+      RESOURCE_GROUP_NAME: ${{ steps.extract-terraform-outputs.outputs.RESOURCE_GROUP_NAME }}
+      FUNCTION_APP_NAME: ${{ steps.extract-terraform-outputs.outputs.FUNCTION_APP_NAME }}
+      ENVIRONMENT: ${{ steps.set-env-vars.outputs.ENVIRONMENT }}
+      GH_MANAGED_IDENTITY_CLIENT_ID: ${{ steps.extract-terraform-outputs.outputs.AZURE_GH_MANAGED_IDENTITY_CLIENT_ID }}
+      WORKSPACE: ${{ steps.set-env-vars.outputs.WORKSPACE }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set Environment and Workspace
+        id: set-env-vars
+        run: |
+          BASE_NAME=${{ secrets.TF_CLOUD_WORKSPACE_BASE_NAME }}
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENVIRONMENT=${{ github.event.inputs.environment }}
+          elif [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
+            ENVIRONMENT="STAGING"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            ENVIRONMENT="DEV"
+          else
+            echo "Unknown environment. Exiting."
+            exit 1
+          fi
+
+          echo "ENVIRONMENT=$ENVIRONMENT" >> "$GITHUB_OUTPUT"
+
+          WORKSPACE="${BASE_NAME}-${ENVIRONMENT,,}"
+
+          echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
+
+      - name: Extract Terraform Outputs
+        id: extract-terraform-outputs
+        env:
+          TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
+          TF_WORKSPACE: ${{ steps.set-env-vars.outputs.WORKSPACE }}
+        run: |
+          echo RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name) >> "$GITHUB_OUTPUT"
+          echo FUNCTION_APP_NAME=$(terraform output -raw function_app_name) >> "$GITHUB_OUTPUT"
+          echo AZURE_GH_MANAGED_IDENTITY_CLIENT_ID=$(terraform output -raw gh_uai_client_id) >> "$GITHUB_OUTPUT"
+
   terraform:
     name: Apply Terraform Resources
     runs-on: ubuntu-latest
@@ -107,7 +153,7 @@ jobs:
   azure-connect:
     name: Login to Azure and get Publish Profile
     runs-on: ubuntu-latest
-    needs: terraform
+    needs: [terraform, prepare-outputs]
     permissions:
       contents: read
       id-token: write
@@ -126,6 +172,7 @@ jobs:
         run: |
           echo "All terraform outputs:"
           echo "${{ toJson(needs.terraform.outputs) }}"
+          echo "${{ toJson(needs.prepare-outputs) }}"
           
           echo "TF_WORKSPACE: ${{ needs.terraform.outputs.workspace }}"
           echo "Resource Group Name: ${{ needs.terraform.outputs.resource_group_name }}"
