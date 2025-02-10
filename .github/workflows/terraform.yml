@@ -29,10 +29,7 @@ jobs:
         working-directory: infrastructure/terraform
 
     outputs:
-      resource_group_name: ${{ steps.extract-terraform-outputs.outputs.RESOURCE_GROUP_NAME }}
-      function_app_name: ${{ steps.extract-terraform-outputs.outputs.FUNCTION_APP_NAME }}
       environment: ${{ steps.set-env-vars.outputs.ENVIRONMENT }}
-      gh_managed_identity_client_id: ${{ steps.extract-terraform-outputs.outputs.AZURE_GH_MANAGED_IDENTITY_CLIENT_ID }}
       workspace: ${{ steps.set-env-vars.outputs.WORKSPACE }}
 
     steps:
@@ -94,16 +91,6 @@ jobs:
           TF_WORKSPACE: ${{ steps.set-env-vars.outputs.WORKSPACE }}
         run: terraform apply -auto-approve -input=false
 
-      - name: Extract Terraform Outputs
-        id: extract-terraform-outputs
-        env:
-          TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
-          TF_WORKSPACE: ${{ steps.set-env-vars.outputs.WORKSPACE }}
-        run: |
-          echo RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name) >> "$GITHUB_OUTPUT"
-          echo FUNCTION_APP_NAME=$(terraform output -raw function_app_name) >> "$GITHUB_OUTPUT"
-          echo AZURE_GH_MANAGED_IDENTITY_CLIENT_ID=$(terraform output -raw gh_uai_client_id) >> "$GITHUB_OUTPUT"
-
   azure-connect:
     name: Login to Azure and get Publish Profile
     runs-on: ubuntu-latest
@@ -116,7 +103,6 @@ jobs:
 
     env:
       TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
-      TF_WORKSPACE: ${{ needs.terraform.outputs.workspace }}
 
     outputs:
       azure_functionapp_publish_profile: ${{ steps.get-publish-profile.outputs.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
@@ -129,19 +115,29 @@ jobs:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
           terraform_wrapper: false
 
-      - name: Debug Outputs from Terraform
+      - name: Terraform Outputs
+        id: terraform-outputs
         run: |
-          echo "All terraform outputs:"
-          echo "${{ toJson(needs.terraform.outputs) }}"
-          
           BASE_NAME=${{ secrets.TF_CLOUD_WORKSPACE_BASE_NAME }}
           ENVIRONMENT=${{ needs.terraform.outputs.environment }}
           echo "TF_WORKSPACE: "${BASE_NAME}-${ENVIRONMENT,,}
+          echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_OUTPUT"
 
-          echo "Resource Group Name: ${{ needs.terraform.outputs.resource_group_name }}"
-          echo "Function App Name: ${{ needs.terraform.outputs.function_app_name }}"
-          echo "Environment: ${{ needs.terraform.outputs.environment }}"
-          echo "GitHub Managed Identity Client ID: ${{ needs.terraform.outputs.gh_managed_identity_client_id }}"
+      - name: Extract Terraform Outputs
+        id: extract-terraform-outputs
+        env:
+          TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
+          TF_WORKSPACE: ${{ steps.terraform-outputs.outputs.WORKSPACE }}
+        run: |
+          echo RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name) >> "$GITHUB_OUTPUT"
+          echo FUNCTION_APP_NAME=$(terraform output -raw function_app_name) >> "$GITHUB_OUTPUT"
+          echo AZURE_GH_MANAGED_IDENTITY_CLIENT_ID=$(terraform output -raw gh_uai_client_id) >> "$GITHUB_OUTPUT"
+
+      - name: Debug Terraform Outputs
+        run: |
+          echo "RESOURCE_GROUP_NAME: ${{ steps.extract-terraform-outputs.outputs.RESOURCE_GROUP_NAME }}"
+          echo "FUNCTION_APP_NAME: ${{ steps.extract-terraform-outputs.outputs.FUNCTION_APP_NAME }}"
+          echo "AZURE_GH_MANAGED_IDENTITY_CLIENT_ID: ${{ steps.extract-terraform-outputs.outputs.AZURE_GH_MANAGED_IDENTITY_CLIENT_ID }}"
 
       - name: Azure login
         uses: azure/login@v2
