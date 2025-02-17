@@ -9,7 +9,7 @@ class FunctionUnitTests(TestCase):
     def test_translate_text(self):
         # send an empty body, the function only requires parameters from the query string
         request = HttpRequest(
-            method="GET",
+            method="POST",
             url="http://localhost:7071/api/translate_http_trigger",
             body="",
             params={"text": "Hello World!", "language": "Belarussian" },
