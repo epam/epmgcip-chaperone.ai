@@ -29,7 +29,7 @@ def translate_http_trigger(req: func.HttpRequest) -> func.HttpResponse:
              "Language parameter must be specified.",
              status_code=400
         )
-    text = req.params.get('text')
+    text = req.get_body()
     if not text:
         return func.HttpResponse(
              "Text parameter must be specified.",
