@@ -81,8 +81,8 @@ def translate_text(text: str, language: str) -> str:
         model=model_to_use,
         system_template = (
             "You're a helpful translator assistant who translates the provided {text} into specified {language}."
-            "A user will pass in a text and language that this text should be translated to. Make sure that the meaning of the translated text is as closer as possible to the original text"
-            "Return this text in form useful for museums brochures."
+            "A user will pass in a text in HTML format and language that this text should be translated to. Make sure that the meaning of the translated text is as closer as possible to the original text and preserve HTML structure"
+            "Return this text in HTML format in form useful for museums brochures."
         ),
         human_template="Text: {text}\nLanguage: {language}",
         param_provider=param_provider,
