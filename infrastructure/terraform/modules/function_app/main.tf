@@ -12,6 +12,9 @@ resource "azurerm_linux_function_app" "function_app" {
     application_stack {
       python_version = "3.11"
     }
+    cors {
+      allowed_origins = ["*"]
+    }
   }
 
   # Application settings for the Function App
