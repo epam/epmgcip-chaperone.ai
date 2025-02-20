@@ -11,8 +11,8 @@ class FunctionUnitTests(TestCase):
         request = HttpRequest(
             method="POST",
             url="http://localhost:7071/api/translate_http_trigger",
-            body="",
-            params={"text": "Hello World!", "language": "Belarussian" },
+            body="Hello World!",
+            params={ "language": "Belarussian" },
         )
         # call the Azure Function
         response = translate_http_trigger(request)
@@ -30,3 +30,4 @@ class FunctionUnitTests(TestCase):
                 keyword.lower(),
                 j["LLM Response"].lower()
             )
+            print("\nAsserting completed: " + keyword + "..")
