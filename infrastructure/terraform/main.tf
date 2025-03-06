@@ -43,6 +43,7 @@ module "function_app" {
   storage_account_access_key = module.storage_account.primary_access_key
   depends_on                 = [module.resource_group, module.storage_account, module.app_service_plan, module.cognitive_account]
   api_key                    = module.cognitive_account.api_key
+  openai_api_base            = module.cognitive_account.endpoint
 }
 
 # Module for creating a Cognitive Services Account

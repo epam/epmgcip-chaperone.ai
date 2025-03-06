@@ -62,3 +62,10 @@ variable "api_key" {
   type        = string
   sensitive   = true
 }
+
+variable "openai_api_base" {
+  description = "Base URL for OpenAI services"
+  type        = string
+  sensitive   = false
+  
+}
