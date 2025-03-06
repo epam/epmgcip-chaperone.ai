@@ -37,8 +37,6 @@ az ad sp create-for-rbac --role "User Access Administrator" --scopes /subscripti
 
 Replace `<YOUR_SUBSCRIPTION_ID>` with your Azure Subscription ID.
 
-Make sure that service principals has `User Access Administrator` and `Contributor` roles to make it possible to create resources and assign roles.
-
 #### **Step 3: Save the Output**
 The command will output the following JSON:
 ```json
@@ -71,32 +69,26 @@ Take note of the following values:
 ### **1. Terraform Cloud Workspace Configuration**
 Create workspaces in Terraform Cloud for each environment (`DEV`, `STAGING`, `PROD`).
 
-Add the following **Environment Variables** in project variable set (e.g. "Azure"):
-
-| Key                   | Type      | Value                          | Category |
-|-----------------------|-----------|--------------------------------|----------|
-| `ARM_SUBSCRIPTION_ID` | Sensitive | Azure Subscription ID          | Env      |
-| `ARM_TENANT_ID`       | Sensitive | Azure Tenant ID                | Env      |
-
 #### Workspace Variables:
+Add the following **Terraform Variables** in each workspace:
+
+| Key                        | Type      | Value                  | Category   |
+|----------------------------|-----------|------------------------|------------|
+| `cognitive_account_name`   | String    | Cognitive account name | Terraform  |
+| `environment`              | String    | `DEV`/`STAGING`/`PROD` | Terraform  |
+| `function_app_name`        | String    | Azure Function name    | Terraform  |
+| `resource_group_name`      | String    | Azure Resource Group   | Terraform  |
+| `service_plan_name`        | String    | App Service Plan Name  | Terraform  |
+| `storage_account_name`     | String    | Storage Account Name   | Terraform  |
+
 Add the following **Environment Variables** in each workspace:
 
 | Key                   | Type      | Value                          | Category |
 |-----------------------|-----------|--------------------------------|----------|
 | `ARM_CLIENT_ID`       | Sensitive | Azure Service Principal ID     | Env      |
 | `ARM_CLIENT_SECRET`   | Sensitive | Azure Service Principal Secret | Env      |
-
-
-Add the following **Terraform Variables** in each workspace:
-
-| Key                   | Type      | Value                  | Category   |
-|-----------------------|-----------|------------------------|------------|
-| `environment`         | String    | `DEV`/`STAGING`/`PROD` | Terraform  |
-| `function_app_name`   | String    | Azure Function name    | Terraform  |
-| `OPENAI_API_KEY`      | Sensitive | Your OpenAI API key    | Terraform  |
-| `resource_group_name` | String    | Azure Resource Group   | Terraform  |
-| `service_plan_name`   | String    | App Service Plan Name  | Terraform  |
-| `storage_account_name`| String    | Storage Account Name   | Terraform  |
+| `ARM_SUBSCRIPTION_ID` | Sensitive | Azure Subscription ID          | Env      |
+| `ARM_TENANT_ID`       | Sensitive | Azure Tenant ID                | Env      |
 
 ---
 
@@ -105,8 +97,6 @@ Navigate to your repository’s **Settings** > **Secrets and variables** > **Act
 
 | Name                               | Value                           |
 |------------------------------------|---------------------------------|
-| `ARM_SUBSCRIPTION_ID`              | Azure Subscription ID           |
-| `ARM_TENANT_ID`                    | Azure Tenant ID                 |
 | `TF_API_TOKEN`                     | Terraform Cloud API Token       |
 | `TF_CLOUD_ORGANIZATION`            | Terraform Cloud Organization    |
 | `TF_CLOUD_WORKSPACE_BASE_NAME`     | Base name for workspaces (e.g., `myapp`) |
@@ -162,8 +152,8 @@ To destroy all resources, use the **Destroy Terraform Resources** workflow:
 ---
 
 ## **Code Deployment**
-1. Place your Azure Function code in the `functions` directory in the repository.
-2. The function will be automatically deployed during the `Deploy` step.
+1. Place your Azure Function code in the `function` directory in the repository.
+2. The function will be automatically deployed during the `Terraform Apply` step.
 
 ---
 
