@@ -51,7 +51,7 @@ module "cognitive_account" {
   environment            = var.environment
   cognitive_account_name = var.cognitive_account_name
   resource_group_name    = module.resource_group.name
-  location               = module.resource_group.location
+  location               = "eastus"
 }
 
 # Module for creating a User Assigned Identity
