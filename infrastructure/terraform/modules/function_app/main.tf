@@ -20,7 +20,7 @@ resource "azurerm_linux_function_app" "function_app" {
   # Application settings for the Function App
   app_settings = {
     "FUNCTIONS_WORKER_RUNTIME" = "python" # Specifies the runtime (Python)
-    "OPENAI_API_KEY"           = var.OPENAI_API_KEY
+    "OPENAI_API_KEY"           = var.api_key
   }
 
   tags = {

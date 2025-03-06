@@ -57,7 +57,7 @@ variable "environment" {
   nullable    = false
 }
 
-variable "OPENAI_API_KEY" {
+variable "api_key" {
   description = "API Key for OpenAI services"
   type        = string
   sensitive   = true
