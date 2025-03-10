@@ -30,3 +30,9 @@ variable "environment" {
   sensitive   = false
   nullable    = false
 }
+
+variable "chat_model" {
+  description = "The model to use for the chatbot"
+  type        = string
+  sensitive   = false
+}

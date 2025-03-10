@@ -71,3 +71,12 @@ variable "cognitive_account_name" {
   sensitive   = false
   nullable    = false
 }
+
+variable "chat_model" {
+  description = "The model to use for the chatbot"
+  type        = string
+  sensitive   = false
+  # GPT-4o mini is our most cost-efficient small model that’s smarter and cheaper than GPT-3.5 Turbo, 
+  # and has vision capabilities. The model has 128K context and an October 2023 knowledge cutoff.
+  default     = "gpt-4o-mini"
+}

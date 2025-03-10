@@ -14,3 +14,17 @@ resource "azurerm_cognitive_account" "openai" {
     environment = var.environment
   }
 }
+
+resource "azurerm_cognitive_deployment" "chat_deployment" {
+  name                 = "chat-deployment"
+  cognitive_account_id = azurerm_cognitive_account.openai.id
+
+  model {
+    name    = var.chat_model
+    format  = "OpenAI"
+  }
+
+  sku {
+    name = "GlobalStandard"
+  }
+}

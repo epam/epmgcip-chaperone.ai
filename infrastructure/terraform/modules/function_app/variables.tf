@@ -66,6 +66,11 @@ variable "api_key" {
 variable "openai_api_base" {
   description = "Base URL for OpenAI services"
   type        = string
+  sensitive   = false 
+}
+
+variable "chat_model" {
+  description = "The model to use for the chatbot"
+  type        = string
   sensitive   = false
-  
 }

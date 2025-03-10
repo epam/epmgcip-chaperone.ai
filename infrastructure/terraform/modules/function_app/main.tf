@@ -22,6 +22,8 @@ resource "azurerm_linux_function_app" "function_app" {
     "FUNCTIONS_WORKER_RUNTIME" = "python" # Specifies the runtime (Python)
     "OPENAI_API_KEY"           = var.api_key
     "OPENAI_API_BASE"          = var.openai_api_base
+    "OPENAI_API_TYPE"          = "azure"
+    "MODEL"                    = var.chat_model
   }
 
   tags = {
