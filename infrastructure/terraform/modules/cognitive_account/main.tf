@@ -16,7 +16,7 @@ resource "azurerm_cognitive_account" "openai" {
 }
 
 resource "azurerm_cognitive_deployment" "chat_deployment" {
-  name                 = "chat-deployment"
+  name                 = var.chat_model
   cognitive_account_id = azurerm_cognitive_account.openai.id
 
   model {
@@ -25,6 +25,6 @@ resource "azurerm_cognitive_deployment" "chat_deployment" {
   }
 
   sku {
-    name = "GlobalStandard"
+    name = "Standard"
   }
 }
