@@ -23,6 +23,7 @@ resource "azurerm_linux_function_app" "function_app" {
     "OPENAI_API_KEY"           = var.api_key
     "OPENAI_API_BASE"          = var.openai_api_base
     "OPENAI_API_TYPE"          = "azure"
+    "OPENAI_API_VERSION"       = "2025-02-01-preview"
     "MODEL"                    = var.chat_model
   }
 

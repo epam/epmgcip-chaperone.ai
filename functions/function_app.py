@@ -44,25 +44,18 @@ def llm_call(model, system_template, human_template, param_provider: Callable[[]
         temperature=0.7
         # default value is bigger and dependent on model
         max_tokens=2048
-        logging.info('Starting LLM call')
-        logging.info('MODEL type %s', os.getenv('MODEL'))
-        logging.info('api type %s', os.getenv('OPENAI_API_TYPE'))
-        logging.info('key %s', os.getenv('OPENAI_API_KEY'))
-        logging.info('url %s', os.getenv('OPENAI_API_BASE'))
         
         chat_model = AzureChatOpenAI(
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
         )
-        logging.info('model %s', chat_model)
         system_message_prompt = SystemMessagePromptTemplate.from_template(system_template)
 
         human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 
         chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
 
-        logging.info('Creating LLM chain')
         # Create the LLM chain
         chain = LLMChain(
             llm=chat_model,
@@ -71,13 +64,11 @@ def llm_call(model, system_template, human_template, param_provider: Callable[[]
         )
 
         params = param_provider()
-        logging.info('Running LLM chain')
         # Run the chain and return the result
         return chain.run(**params)
     except Exception as e:
         # Handle any exceptions that occur during the LLM call
         logging.info('An error occurred while calling the LLM %s', e)
-        print(f"An error occurred while calling the LLM: {e}")
         raise e
 
 class CustomOutputParser(BaseOutputParser):
