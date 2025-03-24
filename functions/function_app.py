@@ -49,6 +49,11 @@ def llm_call(model, system_template, human_template, param_provider: Callable[[]
             temperature=temperature,
             max_tokens=max_tokens,
         )
+        print(f"model: {model}")
+        print(f"MODEL type: {os.getenv('MODEL')}")
+        print(f"api type: {os.getenv('OPENAI_API_TYPE')}")
+        print(f"key: {os.getenv('OPENAI_API_KEY')}")
+        print(f"url: {os.getenv('OPENAI_API_BASE')}")
         system_message_prompt = SystemMessagePromptTemplate.from_template(system_template)
 
         human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
