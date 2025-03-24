@@ -1,4 +1,4 @@
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import AzureChatOpenAI
 from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
@@ -44,7 +44,7 @@ def llm_call(model, system_template, human_template, param_provider: Callable[[]
         temperature=0.7
         # default value is bigger and dependent on model
         max_tokens=2048
-        chat_model = ChatOpenAI(
+        chat_model = AzureChatOpenAI(
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
