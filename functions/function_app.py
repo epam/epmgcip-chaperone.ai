@@ -44,6 +44,7 @@ def llm_call(model, system_template, human_template, param_provider: Callable[[]
         temperature=0.7
         # default value is bigger and dependent on model
         max_tokens=2048
+        logging.info('Starting LLM call')
         print(f"MODEL type: {os.getenv('MODEL')}")
         print(f"api type: {os.getenv('OPENAI_API_TYPE')}")
         print(f"key: {os.getenv('OPENAI_API_KEY')}")
@@ -59,6 +60,7 @@ def llm_call(model, system_template, human_template, param_provider: Callable[[]
 
         chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
 
+        logging.info('Creating LLM chain')
         # Create the LLM chain
         chain = LLMChain(
             llm=chat_model,
@@ -67,10 +69,12 @@ def llm_call(model, system_template, human_template, param_provider: Callable[[]
         )
 
         params = param_provider()
+        logging.info('Running LLM chain')
         # Run the chain and return the result
         return chain.run(**params)
     except Exception as e:
         # Handle any exceptions that occur during the LLM call
+        logging.info('An error occurred while calling the LLM')
         print(f"An error occurred while calling the LLM: {e}")
         raise e
 
