@@ -45,15 +45,17 @@ def llm_call(model, system_template, human_template, param_provider: Callable[[]
         # default value is bigger and dependent on model
         max_tokens=2048
         logging.info('Starting LLM call')
-        print(f"MODEL type: {os.getenv('MODEL')}")
-        print(f"api type: {os.getenv('OPENAI_API_TYPE')}")
-        print(f"key: {os.getenv('OPENAI_API_KEY')}")
-        print(f"url: {os.getenv('OPENAI_API_BASE')}")
+        logging.info('MODEL type %s', os.getenv('MODEL'))
+        logging.info('api type %s', os.getenv('OPENAI_API_TYPE'))
+        logging.info('key %s', os.getenv('OPENAI_API_KEY'))
+        logging.info('url %s', os.getenv('OPENAI_API_BASE'))
+        
         chat_model = AzureChatOpenAI(
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
         )
+        logging.info('model %s', chat_model)
         system_message_prompt = SystemMessagePromptTemplate.from_template(system_template)
 
         human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
@@ -74,7 +76,7 @@ def llm_call(model, system_template, human_template, param_provider: Callable[[]
         return chain.run(**params)
     except Exception as e:
         # Handle any exceptions that occur during the LLM call
-        logging.info('An error occurred while calling the LLM')
+        logging.info('An error occurred while calling the LLM %s', e)
         print(f"An error occurred while calling the LLM: {e}")
         raise e
 
