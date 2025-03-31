@@ -93,7 +93,7 @@ Add the following **Terraform Variables** in each workspace:
 |-----------------------|-----------|------------------------|------------|
 | `environment`         | String    | `DEV`/`STAGING`/`PROD` | Terraform  |
 | `function_app_name`   | String    | Azure Function name    | Terraform  |
-| `OPENAI_API_KEY`      | Sensitive | Your OpenAI API key    | Terraform  |
+| `cognitive_account_name` | String | Cognitive account name (Open AI)    | Terraform  |
 | `resource_group_name` | String    | Azure Resource Group   | Terraform  |
 | `service_plan_name`   | String    | App Service Plan Name  | Terraform  |
 | `storage_account_name`| String    | Storage Account Name   | Terraform  |

@@ -55,14 +55,6 @@ variable "service_plan_name" {
   }
 }
 
-# Define the OPENAI_API_KEY variable
-variable "OPENAI_API_KEY" {
-  description = "API Key for OpenAI services"
-  type        = string
-  sensitive   = true
-  nullable    = false
-}
-
 variable "github_organization" {
   description = "GitHub organization name"
   type        = string
@@ -71,4 +63,20 @@ variable "github_organization" {
 variable "github_repository" {
   description = "GitHub repository name"
   type        = string
+}
+
+variable "cognitive_account_name" {
+  description = "Name of the Cognitive Services Account"
+  type        = string
+  sensitive   = false
+  nullable    = false
+}
+
+variable "chat_model" {
+  description = "The model to use for the chatbot"
+  type        = string
+  sensitive   = false
+  # GPT-4o mini is our most cost-efficient small model that’s smarter and cheaper than GPT-3.5 Turbo, 
+  # and has vision capabilities. The model has 128K context and an October 2023 knowledge cutoff.
+  default     = "gpt-4o-mini"
 }

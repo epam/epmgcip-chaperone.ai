@@ -1,4 +1,4 @@
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import AzureChatOpenAI
 from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
@@ -9,10 +9,6 @@ from langchain.chains import LLMChain
 from langchain.schema import BaseOutputParser
 import os
 import json  # Import json module to convert dictionary to JSON string
-
-# GPT-4o mini is our most cost-efficient small model that’s smarter and cheaper than GPT-3.5 Turbo, 
-# and has vision capabilities. The model has 128K context and an October 2023 knowledge cutoff.
-model_to_use="gpt-4o-mini"
 
 import azure.functions as func
 import logging
@@ -44,12 +40,16 @@ def translate_http_trigger(req: func.HttpRequest) -> func.HttpResponse:
 
 def llm_call(model, system_template, human_template, param_provider: Callable[[], dict], custom_output_parser) -> str:
     try:
-        api_key = os.environ['OPENAI_API_KEY']
         # ranges from 0 to 2, with lower values indicating greater determinism and higher values indicating more randomness.
         temperature=0.7
         # default value is bigger and dependent on model
         max_tokens=2048
-        chat_model = ChatOpenAI(model=model, api_key=api_key, temperature=temperature, max_tokens=max_tokens)
+        
+        chat_model = AzureChatOpenAI(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
         system_message_prompt = SystemMessagePromptTemplate.from_template(system_template)
 
         human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
@@ -68,7 +68,7 @@ def llm_call(model, system_template, human_template, param_provider: Callable[[]
         return chain.run(**params)
     except Exception as e:
         # Handle any exceptions that occur during the LLM call
-        print(f"An error occurred while calling the LLM: {e}")
+        logging.info('An error occurred while calling the LLM %s', e)
         raise e
 
 class CustomOutputParser(BaseOutputParser):
@@ -77,6 +77,8 @@ class CustomOutputParser(BaseOutputParser):
 
 def translate_text(text: str, language: str) -> str:
     param_provider = lambda: {"text": text, "language": language}
+    model_to_use = os.environ['MODEL']
+
     return llm_call(
         model=model_to_use,
         system_template = (

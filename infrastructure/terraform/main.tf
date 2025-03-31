@@ -41,8 +41,21 @@ module "function_app" {
   service_plan_id            = module.app_service_plan.id
   storage_account_name       = module.storage_account.name
   storage_account_access_key = module.storage_account.primary_access_key
-  depends_on                 = [module.resource_group, module.storage_account, module.app_service_plan]
-  OPENAI_API_KEY             = var.OPENAI_API_KEY
+  api_key                    = module.cognitive_account.api_key
+  openai_api_base            = module.cognitive_account.endpoint
+  chat_model                 = var.chat_model
+  depends_on                 = [module.resource_group, module.storage_account, module.app_service_plan, module.cognitive_account]
+}
+
+# Module for creating a Cognitive Services Account
+module "cognitive_account" {
+  source                 = "./modules/cognitive_account"
+  environment            = var.environment
+  cognitive_account_name = var.cognitive_account_name
+  resource_group_name    = module.resource_group.name
+  location               = "eastus"
+  chat_model             = var.chat_model
+  depends_on             = [module.resource_group]
 }
 
 # Module for creating a User Assigned Identity
